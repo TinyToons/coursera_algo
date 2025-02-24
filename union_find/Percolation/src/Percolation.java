@@ -3,11 +3,12 @@ import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 public class Percolation {
 
     // Grid size
-    private final int  gs;
+    private final int  gridSize;
     // Count of open sites
     private int openSites;
-    // op[i]: is site(i) opened
-    private final boolean[] op;
+    // isOpen[i]: is site(i) opened
+    // isFull[i] :is site(i) full
+    private final boolean[] isOpen, isFullCache;
     // index of virtual top and virtual bottom sites
     private final int vts, vbs;
     // WQUUF object
@@ -17,16 +18,21 @@ public class Percolation {
     public Percolation(int n)
     {
         if (n <= 0) 
-            throw new IllegalArgumentException("n should be greater than 0!");
-        gs = n;
+            throw new IllegalArgumentException("Grid size must be positive!");
+        gridSize = n;
         openSites = 0;
         // grid index size: n2 + 2 virtual sites
-        int gis = n * n + 2;
+        int gridIndexSize = n * n + 2;
         // Init uf
-        uf = new WeightedQuickUnionUF(gis);
+        uf = new WeightedQuickUnionUF(gridIndexSize);
         // Init open flag of i: all the cells are blocked
-        op = new boolean[gis];
-        for (int i = 0; i < gis; i++) op[i] = false;
+        isOpen = new boolean[gridIndexSize];
+        isFullCache = new boolean[gridIndexSize];
+        for (int i = 0; i < gridIndexSize; i++)
+        {
+            isOpen[i] = false;
+            isFullCache[i] = false;
+        }
         // virtual sites indexes
         vts = n * n;
         vbs = n * n + 1;
@@ -36,53 +42,59 @@ public class Percolation {
     // get the array index from row and cell's column
     private int getIndex(int row, int col)
     {
-        if (row < 1 || row > gs || col < 1 || col > gs)
-            throw new IllegalArgumentException(" 1 <= row <= " + gs + " and 1 <= col <= " + gs + "!");
+        if (row < 1 || row > gridSize || col < 1 || col > gridSize)
+            throw new IllegalArgumentException("Row and column must be between 1 and " + gridSize + "!");
 
-        return (row-1) * gs + col - 1;
+        return (row-1) * gridSize + col - 1;
     }
 
     // opens the site (row, col) if it is not open already
     public void open(int row, int col)
     {
         int i = getIndex(row, col);
-        if (! op[i]) {
-            op[i] = true;
+        if (! isOpen[i]) {
+            isOpen[i] = true;
             openSites++;
             // union with adjacent open sites
             // left
             if (col > 1 && isOpen(row, col - 1))
                 uf.union(i, i - 1);
             // right
-            if (col < gs && isOpen(row, col + 1))
+            if (col < gridSize && isOpen(row, col + 1))
                 uf.union(i, i + 1);
             // up
             // if the site is on the first row, connect to the virtual top site
             if (row == 1)
                 uf.union(i, vts);
+            // otherwise connect to the upper site
             if (row > 1 && isOpen(row - 1, col))
-                uf.union(i, i - gs);
+                uf.union(i, i - gridSize);
             // down
             // if the site is on the last row, connect to virtual bottom site
-            if (row == gs)
+            if (row == gridSize)
                 uf.union(i, vbs);
-            if (row < gs && isOpen(row + 1, col))
-                uf.union(i, i + gs);
+            // otherwise connect the lower site
+            if (row < gridSize && isOpen(row + 1, col))
+                uf.union(i, i + gridSize);
         }
 
     }
     // is the site (row, col) open?
     public boolean isOpen(int row, int col)
     {
-        return op[getIndex(row, col)];
+        return isOpen[getIndex(row, col)];
     }
 
     // is the site (row, col) full?
     public boolean isFull(int row, int col)
     {
         int index = getIndex(row, col);
-        // check if the site is open and in the same set with the virtual top site
-        return isOpen(row, col) && uf.find(index) == uf.find(vts);
+        // Check the cache if the site is already full
+        if (isFullCache[index]) return true;
+        // Check if the site is open and connected to the virtual top
+        boolean full = isOpen(row, col) && uf.find(index) == uf.find(vts);
+        isFullCache[index] = full;
+        return full;
     }
     // returns the number of open sites
     public int numberOfOpenSites()
@@ -92,22 +104,24 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates()
-    {    // Check if the virtual bottom site and the virtual top site are in the same set
+    {    // Check if the virtual bottom site and the virtual top site are connected
         return uf.find(vts) == uf.find(vbs);
     }
-    // For debug reason
+    // For debugging reason
     public String toString()
     {
-        char[][] grid = new char[gs][gs];
+        char[][] grid = new char[gridSize][gridSize];
         StringBuilder sb = new StringBuilder();
         /* Create and print a chessboard. */
-        char[] colors = {'\u25A1', '\u25A0'};
-        for(int y=1;y<=gs;y++){
-            for (int x=1;x<=gs;x++){
-                if (isOpen(y, x))
-                    grid[y-1][x-1] = colors[0];
+        char[] symbols = {'□', '■', '●'};
+        for(int y=1;y<=gridSize;y++){
+            for (int x=1;x<=gridSize;x++){
+                if (isFull(y, x))
+                    grid[y-1][x-1] = symbols[2];
+                else if (isOpen(y, x))
+                    grid[y-1][x-1] = symbols[0];
                 else
-                    grid[y-1][x-1] = colors[1];
+                    grid[y-1][x-1] = symbols[1];
             }
         }
         for (char[] row: grid) {
@@ -123,13 +137,13 @@ public class Percolation {
     public static void main(String[] args)
     {
         Percolation p = new Percolation(2);
-        p.open(1, 1);
+        p.open(2, 1);
         System.out.println(p.percolates() ? "Percolates" : " Not Yet");
         System.out.println(p);
         p.open(1, 2);
         System.out.println(p.percolates() ? "Percolates" : " Not Yet");
         System.out.println(p);
-        p.open(2, 1);
+        p.open(1, 1);
         System.out.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
         System.out.println(p);
     }
