@@ -7,12 +7,14 @@ public class Percolation {
     // Count of open sites
     private int openSites;
     // isOpen[i]: is site(i) opened
-    // isFull[i] :is site(i) full
-    private final boolean[] isOpen, isFullCache;
+    private final boolean[] isOpen;
     // index of virtual top and virtual bottom sites
     private final int vts, vbs;
     // WQUUF object
+    //uf to test percolation
     private final WeightedQuickUnionUF uf;
+    //ufFull to test if a site is full. Virtual bottom site is excluded
+    private final WeightedQuickUnionUF ufFull;
 
     // creates n-by-n grid, with all sites initially blocked
     public Percolation(int n)
@@ -25,18 +27,16 @@ public class Percolation {
         int gridIndexSize = n * n + 2;
         // Init uf
         uf = new WeightedQuickUnionUF(gridIndexSize);
-        // Init open flag of i: all the cells are blocked
-        isOpen = new boolean[gridIndexSize];
-        isFullCache = new boolean[gridIndexSize];
-        for (int i = 0; i < gridIndexSize; i++)
-        {
-            isOpen[i] = false;
-            isFullCache[i] = false;
-        }
+        ufFull = new WeightedQuickUnionUF(gridIndexSize - 1);
         // virtual sites indexes
         vts = n * n;
         vbs = n * n + 1;
-
+        // Init open flag of i: all the cells are blocked
+        isOpen = new boolean[gridIndexSize];
+        for (int i = 0; i < gridIndexSize; i++)
+        {
+            isOpen[i] = false;
+        }
     }
 
     // get the array index from row and cell's column
@@ -57,25 +57,36 @@ public class Percolation {
             openSites++;
             // union with adjacent open sites
             // left
-            if (col > 1 && isOpen(row, col - 1))
+            if (col > 1 && isOpen(row, col - 1)) {
                 uf.union(i, i - 1);
+                ufFull.union(i, i - 1);
+            }
             // right
-            if (col < gridSize && isOpen(row, col + 1))
+            if (col < gridSize && isOpen(row, col + 1)) {
                 uf.union(i, i + 1);
+                ufFull.union(i, i + 1);
+            }
             // up
             // if the site is on the first row, connect to the virtual top site
-            if (row == 1)
+            if (row == 1) {
                 uf.union(i, vts);
+                ufFull.union(i, vts);
+            }
             // otherwise connect to the upper site
-            if (row > 1 && isOpen(row - 1, col))
+            if (row > 1 && isOpen(row - 1, col)) {
                 uf.union(i, i - gridSize);
+                ufFull.union(i, i - gridSize);
+            }
             // down
             // if the site is on the last row, connect to virtual bottom site
+            // ufFull is not updated since the vbs has been excluded from the site list
             if (row == gridSize)
                 uf.union(i, vbs);
             // otherwise connect the lower site
-            if (row < gridSize && isOpen(row + 1, col))
+            if (row < gridSize && isOpen(row + 1, col)) {
                 uf.union(i, i + gridSize);
+                ufFull.union(i, i + gridSize);
+            }
         }
 
     }
@@ -89,12 +100,8 @@ public class Percolation {
     public boolean isFull(int row, int col)
     {
         int index = getIndex(row, col);
-        // Check the cache if the site is already full
-        if (isFullCache[index]) return true;
         // Check if the site is open and connected to the virtual top
-        boolean full = isOpen(row, col) && uf.find(index) == uf.find(vts);
-        isFullCache[index] = full;
-        return full;
+        return isOpen(row, col) && ufFull.find(index) == ufFull.find(vts);
     }
     // returns the number of open sites
     public int numberOfOpenSites()
@@ -113,7 +120,7 @@ public class Percolation {
         char[][] grid = new char[gridSize][gridSize];
         StringBuilder sb = new StringBuilder();
         /* Create and print a chessboard. */
-        char[] symbols = {'□', '■', '●'};
+        char[] symbols = {'□', '■', 'F'};
         for(int y=1;y<=gridSize;y++){
             for (int x=1;x<=gridSize;x++){
                 if (isFull(y, x))
@@ -136,14 +143,19 @@ public class Percolation {
     // test client (optional)
     public static void main(String[] args)
     {
-        Percolation p = new Percolation(2);
-        p.open(2, 1);
-        System.out.println(p.percolates() ? "Percolates" : " Not Yet");
-        System.out.println(p);
+        Percolation p = new Percolation(3);
         p.open(1, 2);
         System.out.println(p.percolates() ? "Percolates" : " Not Yet");
         System.out.println(p);
-        p.open(1, 1);
+        p.open(2, 2);
+        System.out.println(p.percolates() ? "Percolates" : " Not Yet");
+        System.out.println(p);
+        p.open(3, 3);
+        System.out.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
+        System.out.println(p);
+        p.open(3, 1);
+        System.out.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
+        p.open(2, 1);
         System.out.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
         System.out.println(p);
     }
