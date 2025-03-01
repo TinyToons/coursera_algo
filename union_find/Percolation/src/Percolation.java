@@ -1,3 +1,4 @@
+import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 public class Percolation {
@@ -11,9 +12,9 @@ public class Percolation {
     // index of virtual top and virtual bottom sites
     private final int vts, vbs;
     // WQUUF object
-    //uf to test percolation
+    // uf to test percolation
     private final WeightedQuickUnionUF uf;
-    //ufFull to test if a site is full. Virtual bottom site is excluded
+    // ufFull to test if a site is full. Virtual bottom site is excluded
     private final WeightedQuickUnionUF ufFull;
 
     // creates n-by-n grid, with all sites initially blocked
@@ -52,7 +53,7 @@ public class Percolation {
     public void open(int row, int col)
     {
         int i = getIndex(row, col);
-        if (! isOpen[i]) {
+        if (!isOpen[i]) {
             isOpen[i] = true;
             openSites++;
             // union with adjacent open sites
@@ -121,8 +122,8 @@ public class Percolation {
         StringBuilder sb = new StringBuilder();
         /* Create and print a chessboard. */
         char[] symbols = {'□', '■', 'F'};
-        for(int y=1;y<=gridSize;y++){
-            for (int x=1;x<=gridSize;x++){
+        for (int y = 1; y <= gridSize; y++) {
+            for (int x = 1; x <= gridSize; x++) {
                 if (isFull(y, x))
                     grid[y-1][x-1] = symbols[2];
                 else if (isOpen(y, x))
@@ -131,7 +132,7 @@ public class Percolation {
                     grid[y-1][x-1] = symbols[1];
             }
         }
-        for (char[] row: grid) {
+        for (char[] row: grid) { 
             for (char site : row) {
                 sb.append(site);
             }
@@ -145,18 +146,18 @@ public class Percolation {
     {
         Percolation p = new Percolation(3);
         p.open(1, 2);
-        System.out.println(p.percolates() ? "Percolates" : " Not Yet");
-        System.out.println(p);
+        StdOut.println(p.percolates() ? "Percolates" : " Not Yet");
+        StdOut.println(p);
         p.open(2, 2);
-        System.out.println(p.percolates() ? "Percolates" : " Not Yet");
-        System.out.println(p);
+        StdOut.println(p.percolates() ? "Percolates" : " Not Yet");
+        StdOut.println(p);
         p.open(3, 3);
-        System.out.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
-        System.out.println(p);
+        StdOut.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
+        StdOut.println(p);
         p.open(3, 1);
-        System.out.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
+        StdOut.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
         p.open(2, 1);
-        System.out.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
-        System.out.println(p);
+        StdOut.println(p.percolates() ? "Percolates" + p.numberOfOpenSites() : " Not Yet");
+        StdOut.println(p);
     }
 }
