@@ -19,27 +19,21 @@ public class PercolationStats {
         int ns = n * n;
         t = trials;
         // Open sites cache
-        boolean[] openSites = new boolean[ns];
         f_op = new double[t];
         // Trials loop
-        for (int i=0; i < t; i++) {
-            // Init sites cache to "block"
-            for(int s = 0; s < ns; s++) openSites[s] = false;
+        for (int i = 0; i < t; i++) {
             // Percolation class
             Percolation p = new Percolation(n);
-            // Open sites until the system percolates
+            // Randomly open sites until percolation occurs
             while(! p.percolates()) {
                 // Choose a site at random
-                int row, col, s;
-                do{
-                    row = StdRandom.uniformInt(1, n+1);
-                    col = StdRandom.uniformInt(1, n+1);
-                    s = (row - 1) * n + col -1;
+                int row = StdRandom.uniformInt(1, n+1);
+                int col = StdRandom.uniformInt(1, n+1);
+                if (!p.isOpen(row, col)) {
+                    p.open(row, col);
                 }
-                while(openSites[s]);
-                p.open(row, col);
             }
-            // Set open sites fraction of the trial
+            // Record fraction of open sites for this trial
             f_op[i] = (double) p.numberOfOpenSites() / ns;
         }
     }
